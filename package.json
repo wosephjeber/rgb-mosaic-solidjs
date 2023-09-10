@@ -1,7 +1,7 @@
 {
-  "name": "vite-template-solid",
+  "name": "rgb-mosaic-solidjs",
   "version": "0.0.0",
-  "description": "",
+  "description": "Rewriting the original RGB Mosaic with SolidJS",
   "scripts": {
     "start": "vite",
     "dev": "vite",
@@ -10,6 +10,9 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "husky": "^8.0.3",
+    "prettier": "^3.0.3",
+    "pretty-quick": "^3.1.3",
     "solid-devtools": "^0.27.3",
     "typescript": "^5.1.3",
     "vite": "^4.3.9",
@@ -17,5 +20,10 @@
   },
   "dependencies": {
     "solid-js": "^1.7.6"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   }
 }
