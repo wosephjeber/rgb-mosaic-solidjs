@@ -1,0 +1,8 @@
+.mosaic {
+  flex-grow: 1;
+  position: relative;
+}
+
+.mosaic--canvas {
+  background: #000;
+}
