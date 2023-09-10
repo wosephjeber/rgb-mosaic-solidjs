@@ -1,7 +1,6 @@
 import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import type { Component } from "solid-js";
 
-import styles from "./Mosaic.module.css";
 import { getRowsOfPixels, getPixelData, drawToCanvas } from "./utils/pixels";
 
 const Mosaic: Component = () => {
@@ -66,8 +65,8 @@ const Mosaic: Component = () => {
   });
 
   return (
-    <div class={styles.mosaic}>
-      <canvas class={styles["mosaic--canvas"]} ref={canvas} />
+    <div class="grow-1 relative">
+      <canvas class="bg-black" ref={canvas} />
     </div>
   );
 };
