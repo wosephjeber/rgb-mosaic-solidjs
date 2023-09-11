@@ -1,7 +1,7 @@
 import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import type { Component } from "solid-js";
 
-import { getRowsOfPixels, getPixelData, drawToCanvas } from "./utils/pixels";
+import { getPixelData, drawToCanvas } from "./utils/pixels";
 
 const Mosaic: Component = () => {
   let [getStream, setStream] = createSignal(null);
@@ -41,11 +41,10 @@ const Mosaic: Component = () => {
       console.log(video);
 
       function loop() {
-        const data = getPixelData(video);
-        const pixels = getRowsOfPixels(data);
+        const imageData = getPixelData(video);
 
-        let imageHeight = pixels.length;
-        let imageWidth = pixels[0].length;
+        let imageHeight = imageData.height;
+        let imageWidth = imageData.width;
         let pixelDimension = 6 * 3;
 
         canvas.width = imageWidth * pixelDimension;
@@ -53,7 +52,7 @@ const Mosaic: Component = () => {
         canvas.style.width = (imageWidth * pixelDimension) / 2 + "px";
 
         ctx?.clearRect(0, 0, canvas.width, canvas.height);
-        drawToCanvas(ctx, pixels);
+        drawToCanvas(ctx, imageData);
 
         frame = requestAnimationFrame(loop);
       }

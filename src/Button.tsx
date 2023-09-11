@@ -13,7 +13,7 @@ const Button: ParentComponent<Props> = ({
 }) => {
   return (
     <button
-      class="text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-md transition-colors px-4 py-2"
+      class="text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-md transition-colors px-4 py-2"
       onClick={onClick}
       type={type}
     >

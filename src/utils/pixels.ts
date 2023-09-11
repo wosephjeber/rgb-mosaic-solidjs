@@ -14,27 +14,11 @@ export function getPixelData(video: HTMLVideoElement) {
   return ctx.getImageData(0, 0, video.videoWidth, video.videoHeight);
 }
 
-export function getRowsOfPixels(imageData: ImageData) {
-  const { data, width } = imageData;
-
-  let pixels = [];
-  let rows = [];
-
-  for (let i = 0, len = data.length; i < len; i += 4) {
-    pixels.push(data.slice(i, i + 4));
-  }
-
-  for (let i = 0, len = pixels.length; i < len; i += width) {
-    rows.push(pixels.slice(i, i + width));
-  }
-
-  return rows;
-}
-
-export function drawToCanvas(ctx: CanvasRenderingContext2D, rows: PixelData[]) {
-  function drawPixel(rgb: PixelData, x: number, y: number) {
-    let [r, g, b] = rgb;
-
+export function drawToCanvas(
+  ctx: CanvasRenderingContext2D,
+  imageData: ImageData
+) {
+  function drawPixel(r: number, g: number, b: number, x: number, y: number) {
     ctx.fillStyle = `rgb(${r}, 0, 0)`;
     ctx.fillText(r, x * pixelDimension, y * pixelDimension);
 
@@ -52,9 +36,12 @@ export function drawToCanvas(ctx: CanvasRenderingContext2D, rows: PixelData[]) {
   ctx.textBaseline = "top";
   ctx.textAlign = "center";
 
-  rows.map((row, y) => {
-    row.map((pixel, x) => {
-      drawPixel(pixel, x, y);
-    });
-  });
+  const { data, width } = imageData;
+
+  for (let i = 0, len = data.length; i < len; i += 4) {
+    const x = (i / 4) % width;
+    const y = Math.floor(i / 4 / width);
+
+    drawPixel(data[i], data[i + 1], data[i + 2], x, y);
+  }
 }
