@@ -5,6 +5,7 @@ import { getPixelData, drawToCanvas } from "./utils/pixels";
 
 const Mosaic: Component = () => {
   let [getStream, setStream] = createSignal(null);
+  let [insetBounds, setInsetBounds] = createSignal(null);
 
   let canvas: HTMLCanvasElement;
   let video: HTMLVideoElement;
@@ -38,8 +39,6 @@ const Mosaic: Component = () => {
       };
       video.srcObject = stream;
 
-      console.log(video);
-
       function loop() {
         const imageData = getPixelData(video);
 
@@ -65,13 +64,50 @@ const Mosaic: Component = () => {
     }
   });
 
+  function handleScroll(event) {
+    const { target } = event;
+    const {
+      scrollTop,
+      scrollLeft,
+      offsetWidth,
+      offsetHeight,
+      scrollWidth,
+      scrollHeight,
+    } = target;
+
+    const leftPercent = scrollLeft / scrollWidth;
+    const rightPercent = (scrollWidth - scrollLeft - offsetWidth) / scrollWidth;
+    const topPercent = scrollTop / scrollHeight;
+    const bottomPercent =
+      (scrollHeight - scrollTop - offsetHeight) / scrollHeight;
+
+    const bounds = {
+      left: leftPercent * 100 + "%",
+      right: rightPercent * 100 + "%",
+      top: topPercent * 100 + "%",
+      bottom: bottomPercent * 100 + "%",
+    };
+
+    setInsetBounds(bounds);
+
+    console.log("scrolled", target.scrollTop, target.scrollLeft);
+  }
+
   return (
     <div class="relative">
-      <div class="w-full h-screen overflow-auto">
+      <div class="w-full h-screen overflow-auto" onScroll={handleScroll}>
         <canvas class="bg-black" ref={canvas} />
       </div>
       {getStream() && (
-        <video class="rounded-md absolute top-4 left-4 h-20" ref={video} />
+        <div class="absolute top-4 left-4">
+          <video class="rounded-md h-20" ref={video} />
+          <div
+            class="absolute border border-white"
+            style={{
+              ...(insetBounds() || {}),
+            }}
+          />
+        </div>
       )}
     </div>
   );
