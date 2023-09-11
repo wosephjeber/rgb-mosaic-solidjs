@@ -4,8 +4,10 @@ import type { Component } from "solid-js";
 import { getRowsOfPixels, getPixelData, drawToCanvas } from "./utils/pixels";
 
 const Mosaic: Component = () => {
-  let canvas: HTMLCanvasElement;
   let [getStream, setStream] = createSignal(null);
+
+  let canvas: HTMLCanvasElement;
+  let video: HTMLVideoElement;
 
   onMount(async () => {
     navigator.mediaDevices
@@ -24,8 +26,6 @@ const Mosaic: Component = () => {
     const ctx = canvas.getContext("2d");
 
     if (ctx !== null && stream !== null) {
-      const video = document.createElement("video");
-
       let frame: number | null;
 
       video.onloadeddata = () => {
@@ -37,6 +37,8 @@ const Mosaic: Component = () => {
         console.log("video error", error);
       };
       video.srcObject = stream;
+
+      console.log(video);
 
       function loop() {
         const data = getPixelData(video);
@@ -65,8 +67,13 @@ const Mosaic: Component = () => {
   });
 
   return (
-    <div class="grow-1 relative">
-      <canvas class="bg-black" ref={canvas} />
+    <div class="relative">
+      <div class="w-full h-screen overflow-auto">
+        <canvas class="bg-black" ref={canvas} />
+      </div>
+      {getStream() && (
+        <video class="rounded-md absolute top-4 left-4 h-20" ref={video} />
+      )}
     </div>
   );
 };

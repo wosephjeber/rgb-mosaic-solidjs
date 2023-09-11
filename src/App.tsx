@@ -1,13 +1,27 @@
-import type { Component } from "solid-js";
+import { createSignal, type Component } from "solid-js";
 
 import Mosaic from "./Mosaic";
+import Button from "./Button";
 
 const App: Component = () => {
+  const [started, setStarted] = createSignal<boolean>(false);
+
   return (
-    <div class="flex flex-col h-full">
-      <header class="shrink-0 px-3 py-4">RGB Mosaic</header>
-      <Mosaic />
-    </div>
+    <>
+      {started() ? (
+        <Mosaic />
+      ) : (
+        <div class="flex flex-col h-full justify-center items-center">
+          <Button
+            onClick={() => {
+              setStarted(true);
+            }}
+          >
+            Start
+          </Button>
+        </div>
+      )}
+    </>
   );
 };
 
