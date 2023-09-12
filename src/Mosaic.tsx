@@ -1,7 +1,15 @@
-import { createEffect, createSignal, onCleanup, onMount } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  onCleanup,
+  onMount,
+  untrack,
+} from "solid-js";
 import type { Component } from "solid-js";
 
-import { getPixelData, drawToCanvas } from "./utils/pixels";
+import { getPixelData } from "./utils/pixels";
+
+import OffscreenCanvasWorker from "./offscreen_canvas_worker?worker";
 
 function getInsetBounds(scrollContainer: HTMLElement) {
   const {
@@ -37,6 +45,7 @@ const Mosaic: Component = () => {
   let canvas: HTMLCanvasElement;
   let scrollContainer: HTMLDivElement;
   let video: HTMLVideoElement;
+  let worker: Worker;
 
   onMount(async () => {
     navigator.mediaDevices
@@ -60,7 +69,7 @@ const Mosaic: Component = () => {
         });
       };
       video.onerror = (error) => {
-        console.log("video error", error);
+        console.error("video error", error);
       };
       video.srcObject = stream;
 
@@ -72,43 +81,58 @@ const Mosaic: Component = () => {
 
   createEffect(() => {
     if (videoReady()) {
-      const ctx = canvas.getContext("2d");
-
-      let frame: number | null = requestAnimationFrame(loop);
-      let inset = false;
-
-      function loop() {
-        const imageData = getPixelData(video, contrast(), brightness());
-
-        let imageHeight = imageData.height;
-        let imageWidth = imageData.width;
+      if (!worker) {
+        let imageHeight = video.videoHeight;
+        let imageWidth = video.videoWidth;
         let pixelDimension = 6 * 3;
 
         canvas.width = imageWidth * pixelDimension;
         canvas.height = imageHeight * pixelDimension;
         canvas.style.width = (imageWidth * pixelDimension) / 2 + "px";
 
-        ctx?.clearRect(0, 0, canvas.width, canvas.height);
-        drawToCanvas(ctx, imageData);
+        const offscreenCanvas = canvas.transferControlToOffscreen();
 
-        frame = requestAnimationFrame(loop);
-
-        if (!inset) {
-          setInsetBounds(getInsetBounds(scrollContainer));
-          inset = true;
-        }
+        worker = new OffscreenCanvasWorker();
+        worker.postMessage(
+          { type: "canvas", data: { canvas: offscreenCanvas } },
+          [offscreenCanvas]
+        );
       }
+
+      // Using `untrack` because we don't want the effect to rerun when the
+      // `contrast` and `brightness` signals change. We just want to access
+      // their current values within the effect.
+      untrack(() => {
+        worker.postMessage({
+          type: "draw",
+          data: { imageData: getPixelData(video, contrast(), brightness()) },
+        });
+      });
+
+      worker.onmessage = ({ data }) => {
+        if (data.type === "ready_for_more") {
+          untrack(() => {
+            worker.postMessage({
+              type: "draw",
+              data: {
+                imageData: getPixelData(video, contrast(), brightness()),
+              },
+            });
+          });
+        }
+      };
+
       onCleanup(() => {
-        cancelAnimationFrame(frame);
+        worker.onmessage = null;
       });
     }
   });
 
-  function handleChangeContrast(event) {
+  function handleChangeContrast(event: InputEvent) {
     setContrast(event.target.value);
   }
 
-  function handleChangeBrightness(event) {
+  function handleChangeBrightness(event: InputEvent) {
     setBrightness(event.target.value);
   }
 
