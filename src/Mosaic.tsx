@@ -3,11 +3,39 @@ import type { Component } from "solid-js";
 
 import { getPixelData, drawToCanvas } from "./utils/pixels";
 
+function getInsetBounds(scrollContainer: HTMLElement) {
+  const {
+    scrollTop,
+    scrollLeft,
+    offsetWidth,
+    offsetHeight,
+    scrollWidth,
+    scrollHeight,
+  } = scrollContainer;
+
+  const leftPercent = scrollLeft / scrollWidth;
+  const rightPercent = (scrollWidth - scrollLeft - offsetWidth) / scrollWidth;
+  const topPercent = scrollTop / scrollHeight;
+  const bottomPercent =
+    (scrollHeight - scrollTop - offsetHeight) / scrollHeight;
+
+  return {
+    left: leftPercent * 100 + "%",
+    right: rightPercent * 100 + "%",
+    top: topPercent * 100 + "%",
+    bottom: bottomPercent * 100 + "%",
+  };
+}
+
 const Mosaic: Component = () => {
-  let [getStream, setStream] = createSignal(null);
-  let [insetBounds, setInsetBounds] = createSignal(null);
+  const [getStream, setStream] = createSignal(null);
+  const [videoReady, setVideoReady] = createSignal(false);
+  const [insetBounds, setInsetBounds] = createSignal(null);
+  const [contrast, setContrast] = createSignal(1);
+  const [brightness, setBrightness] = createSignal(1);
 
   let canvas: HTMLCanvasElement;
+  let scrollContainer: HTMLDivElement;
   let video: HTMLVideoElement;
 
   onMount(async () => {
@@ -24,14 +52,11 @@ const Mosaic: Component = () => {
 
   createEffect(() => {
     const stream = getStream();
-    const ctx = canvas.getContext("2d");
 
-    if (ctx !== null && stream !== null) {
-      let frame: number | null;
-
+    if (stream !== null) {
       video.onloadeddata = () => {
         video.play().then(() => {
-          frame = requestAnimationFrame(loop);
+          setVideoReady(true);
         });
       };
       video.onerror = (error) => {
@@ -39,8 +64,21 @@ const Mosaic: Component = () => {
       };
       video.srcObject = stream;
 
+      onCleanup(() => {
+        video.srcObject = null;
+      });
+    }
+  });
+
+  createEffect(() => {
+    if (videoReady()) {
+      const ctx = canvas.getContext("2d");
+
+      let frame: number | null = requestAnimationFrame(loop);
+      let inset = false;
+
       function loop() {
-        const imageData = getPixelData(video);
+        const imageData = getPixelData(video, contrast(), brightness());
 
         let imageHeight = imageData.height;
         let imageWidth = imageData.width;
@@ -54,59 +92,105 @@ const Mosaic: Component = () => {
         drawToCanvas(ctx, imageData);
 
         frame = requestAnimationFrame(loop);
-      }
 
+        if (!inset) {
+          setInsetBounds(getInsetBounds(scrollContainer));
+          inset = true;
+        }
+      }
       onCleanup(() => {
         cancelAnimationFrame(frame);
-
-        video.srcObject = null;
       });
     }
   });
 
+  function handleChangeContrast(event) {
+    setContrast(event.target.value);
+  }
+
+  function handleChangeBrightness(event) {
+    setBrightness(event.target.value);
+  }
+
   function handleScroll(event) {
-    const { target } = event;
-    const {
-      scrollTop,
-      scrollLeft,
-      offsetWidth,
-      offsetHeight,
-      scrollWidth,
-      scrollHeight,
-    } = target;
-
-    const leftPercent = scrollLeft / scrollWidth;
-    const rightPercent = (scrollWidth - scrollLeft - offsetWidth) / scrollWidth;
-    const topPercent = scrollTop / scrollHeight;
-    const bottomPercent =
-      (scrollHeight - scrollTop - offsetHeight) / scrollHeight;
-
-    const bounds = {
-      left: leftPercent * 100 + "%",
-      right: rightPercent * 100 + "%",
-      top: topPercent * 100 + "%",
-      bottom: bottomPercent * 100 + "%",
-    };
+    const bounds = getInsetBounds(event.target);
 
     setInsetBounds(bounds);
-
-    console.log("scrolled", target.scrollTop, target.scrollLeft);
   }
 
   return (
     <div class="relative">
-      <div class="w-full h-screen overflow-auto" onScroll={handleScroll}>
+      <div
+        class="w-full h-screen overflow-auto"
+        ref={scrollContainer}
+        onScroll={handleScroll}
+      >
         <canvas class="bg-black" ref={canvas} />
       </div>
       {getStream() && (
-        <div class="absolute top-4 left-4">
-          <video class="rounded-md h-20" ref={video} />
-          <div
-            class="absolute border border-white"
-            style={{
-              ...(insetBounds() || {}),
-            }}
-          />
+        <div class="absolute flex flex-col items-start top-4 left-4">
+          <div class="relative mb-4">
+            <video class="rounded-md w-40" ref={video} />
+            {insetBounds() && (
+              <div
+                class="absolute border border-white rounded-md"
+                style={insetBounds()}
+              />
+            )}
+          </div>
+          <div class="bg-white rounded-md p-4">
+            <label class="block" for="contrast-slider">
+              Contrast
+            </label>
+            <div class="flex">
+              <input
+                class="block"
+                type="range"
+                id="contrast-slider"
+                name="contrast"
+                min="0"
+                max="2"
+                step="0.05"
+                onInput={handleChangeContrast}
+                value={contrast()}
+              />
+              <input
+                class="ml-2 w-12"
+                type="number"
+                min="0"
+                max="2"
+                step="0.05"
+                value={contrast()}
+                onInput={handleChangeContrast}
+              />
+            </div>
+
+            <label class="block" for="brightness-slider">
+              Brightness
+            </label>
+            <div class="flex">
+              <input
+                class="block"
+                type="range"
+                id="brightness-slider"
+                name="brightness"
+                min="0"
+                max="2"
+                step="0.05"
+                onInput={handleChangeBrightness}
+                value={brightness()}
+              />
+              <input
+                class="ml-2 w-12"
+                type="number"
+                min="0"
+                max="2"
+                step="0.05"
+                value={brightness()}
+                onInput={handleChangeBrightness}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

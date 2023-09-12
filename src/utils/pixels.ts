@@ -1,6 +1,10 @@
 export type PixelData = [r: number, g: number, b: number];
 
-export function getPixelData(video: HTMLVideoElement) {
+export function getPixelData(
+  video: HTMLVideoElement,
+  contrast: number,
+  brightness: number
+) {
   const canvas = document.createElement("canvas");
 
   canvas.width = video.videoWidth;
@@ -8,7 +12,7 @@ export function getPixelData(video: HTMLVideoElement) {
 
   const ctx = canvas.getContext("2d");
 
-  ctx.filter = "contrast(150%) brightness(1.5)";
+  ctx.filter = `contrast(${contrast * 100}%) brightness(${brightness})`;
   ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
   return ctx.getImageData(0, 0, video.videoWidth, video.videoHeight);
