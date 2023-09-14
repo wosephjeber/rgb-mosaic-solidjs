@@ -15,7 +15,6 @@ import Slider from "./Slider";
 const Mosaic: Component = () => {
   const [getStream, setStream] = createSignal(null);
   const [videoReady, setVideoReady] = createSignal(false);
-  const [insetBounds, setInsetBounds] = createSignal(null);
   const [contrast, setContrast] = createSignal(1);
   const [brightness, setBrightness] = createSignal(1);
   const [fontSize, setFontSize] = createSignal(8);
@@ -118,23 +117,52 @@ const Mosaic: Component = () => {
   });
 
   function handleWheel(event: WheelEvent) {
-    setLeft((prevLeft) => prevLeft + event.deltaX * 2);
-    setTop((prevTop) => prevTop + event.deltaY * 2);
+    const pixelDimension = untrack(fontSize) * 3;
+    const deltaXInVideoPixels = (event.deltaX * 2) / pixelDimension;
+    const deltaYInVideoPixels = (event.deltaY * 2) / pixelDimension;
+
+    setLeft((prevLeft) => prevLeft + deltaXInVideoPixels);
+    setTop((prevTop) => prevTop + deltaYInVideoPixels);
+  }
+
+  function getBounds() {
+    if (!video || !canvas) return {};
+
+    const pixelDimension = fontSize() * 3;
+    const canvasWidthInPixelDimensions = canvas.width / pixelDimension;
+    const canvasHeightInPixelDimensions = canvas.height / pixelDimension;
+
+    const bounds = {
+      left: left() / video.videoWidth,
+      right: 1 - (left() + canvasWidthInPixelDimensions) / video.videoWidth,
+      top: top() / video.videoHeight,
+      bottom: 1 - (top() + canvasHeightInPixelDimensions) / video.videoHeight,
+    };
+
+    return {
+      left: `${bounds.left * 100}%`,
+      right: `${bounds.right * 100}%`,
+      top: `${bounds.top * 100}%`,
+      bottom: `${bounds.bottom * 100}%`,
+    };
   }
 
   return (
     <div class="relative">
       <div class="w-full h-screen overflow-auto" onWheel={handleWheel}>
-        <canvas class="bg-black" ref={(el) => (canvas = el)} />
+        <canvas
+          class="bg-black w-screen h-screen"
+          ref={(el) => (canvas = el)}
+        />
       </div>
       {getStream() && (
         <div class="absolute flex flex-col items-start top-4 left-4">
           <div class="relative mb-4">
             <video class="rounded-md w-40" ref={(el) => (video = el)} />
-            {insetBounds() && (
+            {videoReady() && (
               <div
                 class="absolute border border-white rounded-md"
-                style={insetBounds() || {}}
+                style={getBounds()}
               />
             )}
           </div>
