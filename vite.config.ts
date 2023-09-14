@@ -1,5 +1,6 @@
-import { defineConfig } from 'vite';
-import solidPlugin from 'vite-plugin-solid';
+import { defineConfig } from "vite";
+import solidPlugin from "vite-plugin-solid";
+// import basicSsl from "@vitejs/plugin-basic-ssl";
 // import devtools from 'solid-devtools/vite';
 
 export default defineConfig({
@@ -10,11 +11,16 @@ export default defineConfig({
     */
     // devtools(),
     solidPlugin(),
+    /*
+    Uncomment the following line to enable a locally-signed SSL certificate to
+    serve dev server over HTTPS
+    */
+    // basicSsl(),
   ],
   server: {
     port: 3000,
   },
   build: {
-    target: 'esnext',
+    target: "esnext",
   },
 });

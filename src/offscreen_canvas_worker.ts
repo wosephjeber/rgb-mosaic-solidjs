@@ -1,7 +1,7 @@
 let canvas: OffscreenCanvas;
-let ctx: CanvasRenderingContext2D;
+let ctx: OffscreenCanvasRenderingContext2D;
 
-function drawToCanvas(imageData: ImageData) {
+function drawToCanvas(imageData: ImageData, fontSize: number) {
   function drawPixel(r: number, g: number, b: number, x: number, y: number) {
     ctx.fillStyle = `rgb(${r}, 0, 0)`;
     ctx.fillText(String(r), x * pixelDimension, y * pixelDimension);
@@ -17,7 +17,6 @@ function drawToCanvas(imageData: ImageData) {
     );
   }
 
-  const fontSize = 6;
   let pixelDimension = fontSize * 3;
 
   ctx.font = `bold ${fontSize}px monospace`;
@@ -38,19 +37,19 @@ function handleCanvas(data: { canvas: OffscreenCanvas }) {
   const { canvas: offscreenCanvas } = data;
 
   canvas = offscreenCanvas;
-  ctx = canvas.getContext("2d");
+  ctx = canvas.getContext("2d") as OffscreenCanvasRenderingContext2D;
 }
 
-function handleDraw(data: { imageData: ImageData }) {
+function handleDraw(data: { imageData: ImageData; fontSize: number }) {
   if (!canvas || !ctx) {
     console.warn("canvas not set up in worker yet");
     return;
   }
-  const { imageData } = data;
+  const { fontSize, imageData } = data;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  drawToCanvas(imageData);
+  drawToCanvas(imageData, fontSize);
 
   self.postMessage({ type: "ready_for_more" });
 }

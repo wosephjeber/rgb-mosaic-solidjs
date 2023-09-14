@@ -10,6 +10,7 @@ import type { Component } from "solid-js";
 import { getPixelData } from "./utils/pixels";
 
 import OffscreenCanvasWorker from "./offscreen_canvas_worker?worker";
+import Slider from "./Slider";
 
 function getInsetBounds(scrollContainer: HTMLElement) {
   const {
@@ -41,9 +42,9 @@ const Mosaic: Component = () => {
   const [insetBounds, setInsetBounds] = createSignal(null);
   const [contrast, setContrast] = createSignal(1);
   const [brightness, setBrightness] = createSignal(1);
+  const [fontSize, setFontSize] = createSignal(8);
 
   let canvas: HTMLCanvasElement;
-  let scrollContainer: HTMLDivElement;
   let video: HTMLVideoElement;
   let worker: Worker;
 
@@ -82,9 +83,11 @@ const Mosaic: Component = () => {
   createEffect(() => {
     if (videoReady()) {
       if (!worker) {
+        const currentFontSize = untrack(fontSize);
+
         let imageHeight = video.videoHeight;
         let imageWidth = video.videoWidth;
-        let pixelDimension = 6 * 3;
+        let pixelDimension = currentFontSize * 3;
 
         canvas.width = imageWidth * pixelDimension;
         canvas.height = imageHeight * pixelDimension;
@@ -102,22 +105,31 @@ const Mosaic: Component = () => {
       // Using `untrack` because we don't want the effect to rerun when the
       // `contrast` and `brightness` signals change. We just want to access
       // their current values within the effect.
-      untrack(() => {
-        worker.postMessage({
-          type: "draw",
-          data: { imageData: getPixelData(video, contrast(), brightness()) },
-        });
+
+      worker.postMessage({
+        type: "draw",
+        data: {
+          imageData: getPixelData(
+            video,
+            untrack(contrast),
+            untrack(brightness)
+          ),
+          fontSize: fontSize(),
+        },
       });
 
       worker.onmessage = ({ data }) => {
         if (data.type === "ready_for_more") {
-          untrack(() => {
-            worker.postMessage({
-              type: "draw",
-              data: {
-                imageData: getPixelData(video, contrast(), brightness()),
-              },
-            });
+          worker.postMessage({
+            type: "draw",
+            data: {
+              imageData: getPixelData(
+                video,
+                untrack(contrast),
+                untrack(brightness)
+              ),
+              fontSize: fontSize(),
+            },
           });
         }
       };
@@ -128,92 +140,59 @@ const Mosaic: Component = () => {
     }
   });
 
-  function handleChangeContrast(event: InputEvent) {
-    setContrast(event.target.value);
-  }
-
-  function handleChangeBrightness(event: InputEvent) {
-    setBrightness(event.target.value);
-  }
-
-  function handleScroll(event) {
-    const bounds = getInsetBounds(event.target);
+  function handleScroll({ target }: Event) {
+    const bounds = getInsetBounds(target as HTMLDivElement);
 
     setInsetBounds(bounds);
   }
 
   return (
     <div class="relative">
-      <div
-        class="w-full h-screen overflow-auto"
-        ref={scrollContainer}
-        onScroll={handleScroll}
-      >
-        <canvas class="bg-black" ref={canvas} />
+      <div class="w-full h-screen overflow-auto" onScroll={handleScroll}>
+        <canvas class="bg-black" ref={(el) => (canvas = el)} />
       </div>
       {getStream() && (
         <div class="absolute flex flex-col items-start top-4 left-4">
           <div class="relative mb-4">
-            <video class="rounded-md w-40" ref={video} />
+            <video class="rounded-md w-40" ref={(el) => (video = el)} />
             {insetBounds() && (
               <div
                 class="absolute border border-white rounded-md"
-                style={insetBounds()}
+                style={insetBounds() || {}}
               />
             )}
           </div>
           <div class="bg-white rounded-md p-4">
-            <label class="block" for="contrast-slider">
-              Contrast
-            </label>
-            <div class="flex">
-              <input
-                class="block"
-                type="range"
-                id="contrast-slider"
-                name="contrast"
-                min="0"
-                max="2"
-                step="0.05"
-                onInput={handleChangeContrast}
-                value={contrast()}
-              />
-              <input
-                class="ml-2 w-12"
-                type="number"
-                min="0"
-                max="2"
-                step="0.05"
-                value={contrast()}
-                onInput={handleChangeContrast}
-              />
-            </div>
-
-            <label class="block" for="brightness-slider">
-              Brightness
-            </label>
-            <div class="flex">
-              <input
-                class="block"
-                type="range"
-                id="brightness-slider"
-                name="brightness"
-                min="0"
-                max="2"
-                step="0.05"
-                onInput={handleChangeBrightness}
-                value={brightness()}
-              />
-              <input
-                class="ml-2 w-12"
-                type="number"
-                min="0"
-                max="2"
-                step="0.05"
-                value={brightness()}
-                onInput={handleChangeBrightness}
-              />
-            </div>
+            <Slider
+              label="Contrast"
+              max="2"
+              min="0"
+              onInput={({ target }: InputEvent) => {
+                setContrast(Number((target as HTMLInputElement).value));
+              }}
+              step="0.05"
+              value={contrast()}
+            />
+            <Slider
+              label="Brightness"
+              max="2"
+              min="0"
+              onInput={({ target }: InputEvent) => {
+                setBrightness(Number((target as HTMLInputElement).value));
+              }}
+              step="0.05"
+              value={brightness()}
+            />
+            <Slider
+              label="Font Size"
+              max="16"
+              min="6"
+              onInput={({ target }: InputEvent) => {
+                setFontSize(Number((target as HTMLInputElement).value));
+              }}
+              step="1"
+              value={fontSize()}
+            />
           </div>
         </div>
       )}
