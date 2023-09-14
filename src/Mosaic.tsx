@@ -12,30 +12,6 @@ import { getPixelData } from "./utils/pixels";
 import OffscreenCanvasWorker from "./offscreen_canvas_worker?worker";
 import Slider from "./Slider";
 
-function getInsetBounds(scrollContainer: HTMLElement) {
-  const {
-    scrollTop,
-    scrollLeft,
-    offsetWidth,
-    offsetHeight,
-    scrollWidth,
-    scrollHeight,
-  } = scrollContainer;
-
-  const leftPercent = scrollLeft / scrollWidth;
-  const rightPercent = (scrollWidth - scrollLeft - offsetWidth) / scrollWidth;
-  const topPercent = scrollTop / scrollHeight;
-  const bottomPercent =
-    (scrollHeight - scrollTop - offsetHeight) / scrollHeight;
-
-  return {
-    left: leftPercent * 100 + "%",
-    right: rightPercent * 100 + "%",
-    top: topPercent * 100 + "%",
-    bottom: bottomPercent * 100 + "%",
-  };
-}
-
 const Mosaic: Component = () => {
   const [getStream, setStream] = createSignal(null);
   const [videoReady, setVideoReady] = createSignal(false);
@@ -43,6 +19,8 @@ const Mosaic: Component = () => {
   const [contrast, setContrast] = createSignal(1);
   const [brightness, setBrightness] = createSignal(1);
   const [fontSize, setFontSize] = createSignal(8);
+  const [left, setLeft] = createSignal(0);
+  const [top, setTop] = createSignal(0);
 
   let canvas: HTMLCanvasElement;
   let video: HTMLVideoElement;
@@ -83,15 +61,10 @@ const Mosaic: Component = () => {
   createEffect(() => {
     if (videoReady()) {
       if (!worker) {
-        const currentFontSize = untrack(fontSize);
-
-        let imageHeight = video.videoHeight;
-        let imageWidth = video.videoWidth;
-        let pixelDimension = currentFontSize * 3;
-
-        canvas.width = imageWidth * pixelDimension;
-        canvas.height = imageHeight * pixelDimension;
-        canvas.style.width = (imageWidth * pixelDimension) / 2 + "px";
+        canvas.width = window.innerWidth * 2;
+        canvas.height = window.innerHeight * 2;
+        canvas.style.width = canvas.width / 2 + "px";
+        canvas.style.height = canvas.height / 2 + "px";
 
         const offscreenCanvas = canvas.transferControlToOffscreen();
 
@@ -115,6 +88,8 @@ const Mosaic: Component = () => {
             untrack(brightness)
           ),
           fontSize: fontSize(),
+          left: untrack(left),
+          top: untrack(top),
         },
       });
 
@@ -129,6 +104,8 @@ const Mosaic: Component = () => {
                 untrack(brightness)
               ),
               fontSize: fontSize(),
+              left: untrack(left),
+              top: untrack(top),
             },
           });
         }
@@ -140,15 +117,14 @@ const Mosaic: Component = () => {
     }
   });
 
-  function handleScroll({ target }: Event) {
-    const bounds = getInsetBounds(target as HTMLDivElement);
-
-    setInsetBounds(bounds);
+  function handleWheel(event: WheelEvent) {
+    setLeft((prevLeft) => prevLeft + event.deltaX * 2);
+    setTop((prevTop) => prevTop + event.deltaY * 2);
   }
 
   return (
     <div class="relative">
-      <div class="w-full h-screen overflow-auto" onScroll={handleScroll}>
+      <div class="w-full h-screen overflow-auto" onWheel={handleWheel}>
         <canvas class="bg-black" ref={(el) => (canvas = el)} />
       </div>
       {getStream() && (
@@ -185,8 +161,8 @@ const Mosaic: Component = () => {
             />
             <Slider
               label="Font Size"
-              max="16"
-              min="6"
+              max="24"
+              min="8"
               onInput={({ target }: InputEvent) => {
                 setFontSize(Number((target as HTMLInputElement).value));
               }}
