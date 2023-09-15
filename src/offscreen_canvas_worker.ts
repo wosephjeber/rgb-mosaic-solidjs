@@ -14,10 +14,10 @@ function drawToCanvas(
   ctx.textBaseline = "top";
   ctx.textAlign = "center";
 
-  const leftBound = left;
-  const rightBound = canvas.width / pixelDimension + left;
-  const topBound = top;
-  const bottomBound = canvas.height / pixelDimension + top;
+  const leftBound = Math.floor(left);
+  const rightBound = Math.ceil(canvas.width / pixelDimension + left);
+  const topBound = Math.floor(top);
+  const bottomBound = Math.ceil(canvas.height / pixelDimension + top);
 
   function drawPixel(r: number, g: number, b: number, x: number, y: number) {
     if (x < leftBound || y < topBound || x > rightBound || y > bottomBound)
@@ -26,21 +26,21 @@ function drawToCanvas(
     ctx.fillStyle = `rgb(${r}, 0, 0)`;
     ctx.fillText(
       String(r),
-      (x - left) * pixelDimension,
+      (x - left) * pixelDimension + pixelDimension / 2,
       (y - top) * pixelDimension
     );
 
     ctx.fillStyle = `rgb(0, ${g}, 0)`;
     ctx.fillText(
       String(g),
-      (x - left) * pixelDimension,
+      (x - left) * pixelDimension + pixelDimension / 2,
       (y - top) * pixelDimension + fontSize
     );
 
     ctx.fillStyle = `rgb(0, 0, ${b})`;
     ctx.fillText(
       String(b),
-      (x - left) * pixelDimension,
+      (x - left) * pixelDimension + pixelDimension / 2,
       (y - top) * pixelDimension + fontSize * 2
     );
   }

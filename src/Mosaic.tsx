@@ -120,23 +120,35 @@ const Mosaic: Component = () => {
     const pixelDimension = untrack(fontSize) * 3;
     const deltaXInVideoPixels = (event.deltaX * 2) / pixelDimension;
     const deltaYInVideoPixels = (event.deltaY * 2) / pixelDimension;
+    const visibleVideoPixelWidth = canvas.width / pixelDimension;
+    const visibleVideoPixelHeight = canvas.height / pixelDimension;
 
-    setLeft((prevLeft) => prevLeft + deltaXInVideoPixels);
-    setTop((prevTop) => prevTop + deltaYInVideoPixels);
+    setLeft((prevLeft) =>
+      Math.min(
+        Math.max(prevLeft + deltaXInVideoPixels, 0),
+        video.videoWidth - visibleVideoPixelWidth
+      )
+    );
+    setTop((prevTop) =>
+      Math.min(
+        Math.max(prevTop + deltaYInVideoPixels, 0),
+        video.videoHeight - visibleVideoPixelHeight
+      )
+    );
   }
 
   function getBounds() {
     if (!video || !canvas) return {};
 
     const pixelDimension = fontSize() * 3;
-    const canvasWidthInPixelDimensions = canvas.width / pixelDimension;
-    const canvasHeightInPixelDimensions = canvas.height / pixelDimension;
+    const visibleVideoPixelWidth = canvas.width / pixelDimension;
+    const visibleVideoPixelHeight = canvas.height / pixelDimension;
 
     const bounds = {
       left: left() / video.videoWidth,
-      right: 1 - (left() + canvasWidthInPixelDimensions) / video.videoWidth,
+      right: 1 - (left() + visibleVideoPixelWidth) / video.videoWidth,
       top: top() / video.videoHeight,
-      bottom: 1 - (top() + canvasHeightInPixelDimensions) / video.videoHeight,
+      bottom: 1 - (top() + visibleVideoPixelHeight) / video.videoHeight,
     };
 
     return {
