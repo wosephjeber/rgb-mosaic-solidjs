@@ -1,5 +1,7 @@
 import { createUniqueId, Component } from "solid-js";
 
+import styles from "./Slider.module.css";
+
 interface Props {
   label: string;
   max?: string;
@@ -14,13 +16,13 @@ const Slider: Component<Props> = (props) => {
   const rangeId = createUniqueId();
 
   return (
-    <div>
-      <label class="block" for={rangeId} id={labelId}>
+    <>
+      <label class="block text-sm font-bold" for={rangeId} id={labelId}>
         {props.label}
       </label>
       <div class="flex">
         <input
-          class="block"
+          class={styles.slider}
           type="range"
           id={rangeId}
           name="fontsize"
@@ -41,7 +43,7 @@ const Slider: Component<Props> = (props) => {
           onInput={props.onInput}
         />
       </div>
-    </div>
+    </>
   );
 };
 

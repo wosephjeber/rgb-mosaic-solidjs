@@ -7,6 +7,8 @@ import {
 } from "solid-js";
 import type { Component } from "solid-js";
 
+import styles from "./Mosaic.module.css";
+
 import { getPixelData } from "./utils/pixels";
 
 import OffscreenCanvasWorker from "./offscreen_canvas_worker?worker";
@@ -86,7 +88,7 @@ const Mosaic: Component = () => {
             untrack(contrast),
             untrack(brightness)
           ),
-          fontSize: fontSize(),
+          fontSize: untrack(fontSize),
           left: untrack(left),
           top: untrack(top),
         },
@@ -102,7 +104,7 @@ const Mosaic: Component = () => {
                 untrack(contrast),
                 untrack(brightness)
               ),
-              fontSize: fontSize(),
+              fontSize: untrack(fontSize),
               left: untrack(left),
               top: untrack(top),
             },
@@ -160,7 +162,7 @@ const Mosaic: Component = () => {
   }
 
   return (
-    <div class="relative">
+    <div class="relative slate-950">
       <div class="w-full h-screen overflow-auto" onWheel={handleWheel}>
         <canvas
           class="bg-black w-screen h-screen"
@@ -170,7 +172,10 @@ const Mosaic: Component = () => {
       {getStream() && (
         <div class="absolute flex flex-col items-start top-4 left-4">
           <div class="relative mb-4">
-            <video class="rounded-md w-40" ref={(el) => (video = el)} />
+            <video
+              class={`${styles["floating-container"]} rounded-md w-40`}
+              ref={(el) => (video = el)}
+            />
             {videoReady() && (
               <div
                 class="absolute border border-white rounded-md"
@@ -178,37 +183,45 @@ const Mosaic: Component = () => {
               />
             )}
           </div>
-          <div class="bg-white rounded-md p-4">
-            <Slider
-              label="Contrast"
-              max="2"
-              min="0"
-              onInput={({ target }: InputEvent) => {
-                setContrast(Number((target as HTMLInputElement).value));
-              }}
-              step="0.05"
-              value={contrast()}
-            />
-            <Slider
-              label="Brightness"
-              max="2"
-              min="0"
-              onInput={({ target }: InputEvent) => {
-                setBrightness(Number((target as HTMLInputElement).value));
-              }}
-              step="0.05"
-              value={brightness()}
-            />
-            <Slider
-              label="Font Size"
-              max="24"
-              min="8"
-              onInput={({ target }: InputEvent) => {
-                setFontSize(Number((target as HTMLInputElement).value));
-              }}
-              step="1"
-              value={fontSize()}
-            />
+          <div
+            class={`bg-white text-gray-800 rounded-md divide-y divide-slate-200 ${styles["floating-container"]}`}
+          >
+            <div class="px-4 py-3">
+              <Slider
+                label="Contrast"
+                max="2"
+                min="0"
+                onInput={({ target }: InputEvent) => {
+                  setContrast(Number((target as HTMLInputElement).value));
+                }}
+                step="0.05"
+                value={contrast()}
+              />
+            </div>
+            <div class="px-4 py-3">
+              <Slider
+                label="Brightness"
+                max="2"
+                min="0"
+                onInput={({ target }: InputEvent) => {
+                  setBrightness(Number((target as HTMLInputElement).value));
+                }}
+                step="0.05"
+                value={brightness()}
+              />
+            </div>
+            <div class="px-4 py-3">
+              <Slider
+                label="Font Size"
+                max="24"
+                min="8"
+                onInput={({ target }: InputEvent) => {
+                  setFontSize(Number((target as HTMLInputElement).value));
+                }}
+                step="1"
+                value={fontSize()}
+              />
+            </div>
           </div>
         </div>
       )}
