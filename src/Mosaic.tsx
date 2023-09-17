@@ -119,6 +119,8 @@ const Mosaic: Component = () => {
   });
 
   function handleWheel(event: WheelEvent) {
+    event.preventDefault();
+
     const pixelDimension = untrack(fontSize) * 3;
     const deltaXInVideoPixels = (event.deltaX * 2) / pixelDimension;
     const deltaYInVideoPixels = (event.deltaY * 2) / pixelDimension;
@@ -163,7 +165,7 @@ const Mosaic: Component = () => {
 
   return (
     <div class="relative slate-950">
-      <div class="w-full h-screen overflow-auto" onWheel={handleWheel}>
+      <div class="w-screen h-screen" onWheel={handleWheel}>
         <canvas
           class="bg-black w-screen h-screen"
           ref={(el) => (canvas = el)}
