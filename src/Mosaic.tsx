@@ -22,6 +22,7 @@ const Mosaic: Component = () => {
   const [fontSize, setFontSize] = createSignal(8);
   const [left, setLeft] = createSignal(0);
   const [top, setTop] = createSignal(0);
+  const [fps, setFps] = createSignal(0);
 
   let canvas: HTMLCanvasElement;
   let video: HTMLVideoElement;
@@ -76,6 +77,19 @@ const Mosaic: Component = () => {
         );
       }
 
+      let framesCount = 0;
+      let lastIntervalCheck = Date.now();
+
+      const fpsInterval = setInterval(() => {
+        const now = Date.now();
+        const timeElapsed = now - lastIntervalCheck;
+
+        setFps(Math.round((framesCount / timeElapsed) * 1000));
+
+        framesCount = 0;
+        lastIntervalCheck = now;
+      }, 1000);
+
       // Using `untrack` because we don't want the effect to rerun when the
       // `contrast` and `brightness` signals change. We just want to access
       // their current values within the effect.
@@ -91,11 +105,14 @@ const Mosaic: Component = () => {
           fontSize: untrack(fontSize),
           left: untrack(left),
           top: untrack(top),
+          brightness: untrack(brightness),
         },
       });
 
       worker.onmessage = ({ data }) => {
         if (data.type === "ready_for_more") {
+          framesCount += 1;
+
           worker.postMessage({
             type: "draw",
             data: {
@@ -114,6 +131,7 @@ const Mosaic: Component = () => {
 
       onCleanup(() => {
         worker.onmessage = null;
+        clearInterval(fpsInterval);
       });
     }
   });
@@ -186,7 +204,7 @@ const Mosaic: Component = () => {
             )}
           </div>
           <div
-            class={`bg-white text-gray-800 rounded-md divide-y divide-slate-200 ${styles["floating-container"]}`}
+            class={`bg-white text-gray-800 rounded-md divide-y divide-slate-200 mb-4 ${styles["floating-container"]}`}
           >
             <div class="px-4 py-3">
               <Slider
@@ -224,6 +242,11 @@ const Mosaic: Component = () => {
                 value={fontSize()}
               />
             </div>
+          </div>
+          <div
+            class={`bg-white text-gray-800 rounded-md px-4 py-2 ${styles["floating-container"]}`}
+          >
+            {fps()} fps
           </div>
         </div>
       )}
