@@ -3,12 +3,12 @@ let ctx: OffscreenCanvasRenderingContext2D;
 
 function drawToCanvas(
   imageData: ImageData,
-  fontSize: number,
+  pixelDimension: number,
   left: number,
   top: number
 ) {
-  const pixelDimension = fontSize * 3;
   const { data, width } = imageData;
+  const fontSize = pixelDimension / 3;
 
   ctx.font = `bold ${fontSize}px monospace`;
   ctx.textBaseline = "top";
@@ -62,7 +62,7 @@ function handleCanvas(data: { canvas: OffscreenCanvas }) {
 
 function handleDraw(data: {
   imageData: ImageData;
-  fontSize: number;
+  pixelDimension: number;
   left: number;
   top: number;
 }) {
@@ -70,11 +70,11 @@ function handleDraw(data: {
     console.warn("canvas not set up in worker yet");
     return;
   }
-  const { fontSize, imageData, left, top } = data;
+  const { pixelDimension, imageData, left, top } = data;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  drawToCanvas(imageData, fontSize, left, top);
+  drawToCanvas(imageData, pixelDimension, left, top);
 
   self.postMessage({ type: "ready_for_more" });
 }

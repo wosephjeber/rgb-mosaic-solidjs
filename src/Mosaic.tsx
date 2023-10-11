@@ -7,10 +7,11 @@ import {
 } from "solid-js";
 import type { Component } from "solid-js";
 
-import styles from "./Mosaic.module.css";
-
 import { getPixelData } from "./utils/pixels";
 
+import FloatingContainer from "./FloatingContainer";
+import IconBrightness from "./icons/Brightness";
+import IconContrast from "./icons/Contrast";
 import OffscreenCanvasWorker from "./offscreen_canvas_worker?worker";
 import Slider from "./Slider";
 
@@ -19,7 +20,7 @@ const Mosaic: Component = () => {
   const [videoReady, setVideoReady] = createSignal(false);
   const [contrast, setContrast] = createSignal(1);
   const [brightness, setBrightness] = createSignal(1);
-  const [fontSize, setFontSize] = createSignal(8);
+  const [pixelDimension, setPixelDimension] = createSignal(24);
   const [left, setLeft] = createSignal(0);
   const [top, setTop] = createSignal(0);
   const [fps, setFps] = createSignal(0);
@@ -102,7 +103,7 @@ const Mosaic: Component = () => {
             untrack(contrast),
             untrack(brightness)
           ),
-          fontSize: untrack(fontSize),
+          pixelDimension: untrack(pixelDimension),
           left: untrack(left),
           top: untrack(top),
           brightness: untrack(brightness),
@@ -121,7 +122,7 @@ const Mosaic: Component = () => {
                 untrack(contrast),
                 untrack(brightness)
               ),
-              fontSize: untrack(fontSize),
+              pixelDimension: untrack(pixelDimension),
               left: untrack(left),
               top: untrack(top),
             },
@@ -139,11 +140,10 @@ const Mosaic: Component = () => {
   function handleWheel(event: WheelEvent) {
     event.preventDefault();
 
-    const pixelDimension = untrack(fontSize) * 3;
-    const deltaXInVideoPixels = (event.deltaX * 2) / pixelDimension;
-    const deltaYInVideoPixels = (event.deltaY * 2) / pixelDimension;
-    const visibleVideoPixelWidth = canvas.width / pixelDimension;
-    const visibleVideoPixelHeight = canvas.height / pixelDimension;
+    const deltaXInVideoPixels = (event.deltaX * 2) / pixelDimension();
+    const deltaYInVideoPixels = (event.deltaY * 2) / pixelDimension();
+    const visibleVideoPixelWidth = canvas.width / pixelDimension();
+    const visibleVideoPixelHeight = canvas.height / pixelDimension();
 
     setLeft((prevLeft) =>
       Math.min(
@@ -162,9 +162,8 @@ const Mosaic: Component = () => {
   function getBounds() {
     if (!video || !canvas) return {};
 
-    const pixelDimension = fontSize() * 3;
-    const visibleVideoPixelWidth = canvas.width / pixelDimension;
-    const visibleVideoPixelHeight = canvas.height / pixelDimension;
+    const visibleVideoPixelWidth = canvas.width / pixelDimension();
+    const visibleVideoPixelHeight = canvas.height / pixelDimension();
 
     const bounds = {
       left: left() / video.videoWidth,
@@ -191,63 +190,58 @@ const Mosaic: Component = () => {
       </div>
       {getStream() && (
         <div class="absolute flex flex-col items-start top-4 left-4">
-          <div class="relative mb-4">
-            <video
-              class={`${styles["floating-container"]} rounded-md w-40`}
-              ref={(el) => (video = el)}
-            />
+          <FloatingContainer class="relative w-40 mb-4 overflow-hidden">
+            <video class="w-full" ref={(el) => (video = el)} />
             {videoReady() && (
               <div
                 class="absolute border border-white rounded-md"
                 style={getBounds()}
               />
             )}
-          </div>
-          <div
-            class={`bg-white text-gray-800 rounded-md divide-y divide-slate-200 mb-4 ${styles["floating-container"]}`}
-          >
-            <div class="px-4 py-3">
-              <Slider
-                label="Contrast"
-                max="2"
-                min="0"
-                onInput={({ target }: InputEvent) => {
-                  setContrast(Number((target as HTMLInputElement).value));
-                }}
-                step="0.05"
-                value={contrast()}
-              />
-            </div>
-            <div class="px-4 py-3">
-              <Slider
-                label="Brightness"
-                max="2"
-                min="0"
-                onInput={({ target }: InputEvent) => {
-                  setBrightness(Number((target as HTMLInputElement).value));
-                }}
-                step="0.05"
-                value={brightness()}
-              />
-            </div>
-            <div class="px-4 py-3">
-              <Slider
-                label="Font Size"
-                max="24"
-                min="8"
-                onInput={({ target }: InputEvent) => {
-                  setFontSize(Number((target as HTMLInputElement).value));
-                }}
-                step="1"
-                value={fontSize()}
-              />
-            </div>
-          </div>
-          <div
-            class={`bg-white text-gray-800 rounded-md px-4 py-2 ${styles["floating-container"]}`}
-          >
+          </FloatingContainer>
+          <FloatingContainer class="px-4 py-3 mb-4">
+            <Slider
+              icon={IconContrast}
+              label="Contrast"
+              max="2"
+              min="0"
+              onInput={({ target }: InputEvent) => {
+                setContrast(Number((target as HTMLInputElement).value));
+              }}
+              step="0.05"
+              value={contrast()}
+            />
+          </FloatingContainer>
+          <FloatingContainer class="px-4 py-3 mb-4">
+            <Slider
+              icon={IconBrightness}
+              label="Brightness"
+              max="2"
+              min="0"
+              onInput={({ target }: InputEvent) => {
+                setBrightness(Number((target as HTMLInputElement).value));
+              }}
+              step="0.05"
+              value={brightness()}
+            />
+          </FloatingContainer>
+          <FloatingContainer class="px-4 py-3 mb-4">
+            <Slider
+              label="Font size"
+              max="18"
+              min="4"
+              onInput={({ target }: InputEvent) => {
+                setPixelDimension(
+                  Number((target as HTMLInputElement).value) * 6
+                );
+              }}
+              step=".25"
+              value={pixelDimension() / 6}
+            />
+          </FloatingContainer>
+          <FloatingContainer class="text-gray-800 px-4 py-2">
             {fps()} fps
-          </div>
+          </FloatingContainer>
         </div>
       )}
     </div>
