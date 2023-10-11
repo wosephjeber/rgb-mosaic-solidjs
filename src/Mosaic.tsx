@@ -14,6 +14,7 @@ import IconBrightness from "./icons/Brightness";
 import IconContrast from "./icons/Contrast";
 import OffscreenCanvasWorker from "./offscreen_canvas_worker?worker";
 import Slider from "./Slider";
+import Inset from "./Inset";
 
 const Mosaic: Component = () => {
   const [getStream, setStream] = createSignal(null);
@@ -159,27 +160,6 @@ const Mosaic: Component = () => {
     );
   }
 
-  function getBounds() {
-    if (!video || !canvas) return {};
-
-    const visibleVideoPixelWidth = canvas.width / pixelDimension();
-    const visibleVideoPixelHeight = canvas.height / pixelDimension();
-
-    const bounds = {
-      left: left() / video.videoWidth,
-      right: 1 - (left() + visibleVideoPixelWidth) / video.videoWidth,
-      top: top() / video.videoHeight,
-      bottom: 1 - (top() + visibleVideoPixelHeight) / video.videoHeight,
-    };
-
-    return {
-      left: `${bounds.left * 100}%`,
-      right: `${bounds.right * 100}%`,
-      top: `${bounds.top * 100}%`,
-      bottom: `${bounds.bottom * 100}%`,
-    };
-  }
-
   return (
     <div class="relative slate-950">
       <div class="w-screen h-screen" onWheel={handleWheel}>
@@ -200,9 +180,14 @@ const Mosaic: Component = () => {
         >
           <video class="w-full aspect-video" ref={(el) => (video = el)} />
           {videoReady() && (
-            <div
-              class="absolute border border-white rounded-md"
-              style={getBounds()}
+            <Inset
+              canvasHeight={canvas.height}
+              canvasWidth={canvas.width}
+              left={left()}
+              top={top()}
+              pixelDimension={pixelDimension()}
+              videoHeight={video.videoHeight}
+              videoWidth={video.videoWidth}
             />
           )}
         </FloatingContainer>
