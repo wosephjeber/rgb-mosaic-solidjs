@@ -47,6 +47,21 @@ const Mosaic: Component = () => {
     if (stream !== null) {
       video.onloadeddata = () => {
         video.play().then(() => {
+          if (!worker) {
+            canvas.width = window.innerWidth * 2;
+            canvas.height = window.innerHeight * 2;
+            canvas.style.width = canvas.width / 2 + "px";
+            canvas.style.height = canvas.height / 2 + "px";
+
+            const offscreenCanvas = canvas.transferControlToOffscreen();
+
+            worker = new OffscreenCanvasWorker();
+            worker.postMessage(
+              { type: "canvas", data: { canvas: offscreenCanvas } },
+              [offscreenCanvas]
+            );
+          }
+
           setVideoReady(true);
         });
       };
@@ -63,21 +78,6 @@ const Mosaic: Component = () => {
 
   createEffect(() => {
     if (videoReady()) {
-      if (!worker) {
-        canvas.width = window.innerWidth * 2;
-        canvas.height = window.innerHeight * 2;
-        canvas.style.width = canvas.width / 2 + "px";
-        canvas.style.height = canvas.height / 2 + "px";
-
-        const offscreenCanvas = canvas.transferControlToOffscreen();
-
-        worker = new OffscreenCanvasWorker();
-        worker.postMessage(
-          { type: "canvas", data: { canvas: offscreenCanvas } },
-          [offscreenCanvas]
-        );
-      }
-
       let framesCount = 0;
       let lastIntervalCheck = Date.now();
 
@@ -187,63 +187,67 @@ const Mosaic: Component = () => {
           class="bg-black w-screen h-screen"
           ref={(el) => (canvas = el)}
         />
+        {!videoReady() && (
+          <div class="absolute w-screen h-screen flex items-center justify-center text-white top-0 left-0">
+            Loading...
+          </div>
+        )}
       </div>
-      {getStream() && (
-        <div class="absolute flex flex-col items-start top-4 left-4">
-          <FloatingContainer class="relative w-40 mb-4 overflow-hidden">
-            <video class="w-full" ref={(el) => (video = el)} />
-            {videoReady() && (
-              <div
-                class="absolute border border-white rounded-md"
-                style={getBounds()}
-              />
-            )}
-          </FloatingContainer>
-          <FloatingContainer class="px-4 py-3 mb-4">
-            <Slider
-              icon={IconContrast}
-              label="Contrast"
-              max="2"
-              min="0"
-              onInput={({ target }: InputEvent) => {
-                setContrast(Number((target as HTMLInputElement).value));
-              }}
-              step="0.05"
-              value={contrast()}
+      <div class="absolute flex flex-col items-start top-4 left-4">
+        <FloatingContainer
+          bg="black"
+          class="relative w-40 mb-4 overflow-hidden"
+        >
+          <video class="w-full aspect-video" ref={(el) => (video = el)} />
+          {videoReady() && (
+            <div
+              class="absolute border border-white rounded-md"
+              style={getBounds()}
             />
-          </FloatingContainer>
-          <FloatingContainer class="px-4 py-3 mb-4">
-            <Slider
-              icon={IconBrightness}
-              label="Brightness"
-              max="2"
-              min="0"
-              onInput={({ target }: InputEvent) => {
-                setBrightness(Number((target as HTMLInputElement).value));
-              }}
-              step="0.05"
-              value={brightness()}
-            />
-          </FloatingContainer>
-          <FloatingContainer class="px-4 py-3 mb-4">
-            <Slider
-              label="Font size"
-              max="18"
-              min="4"
-              onInput={({ target }: InputEvent) => {
-                setPixelDimension(
-                  Number((target as HTMLInputElement).value) * 6
-                );
-              }}
-              step=".25"
-              value={pixelDimension() / 6}
-            />
-          </FloatingContainer>
-          <FloatingContainer class="text-gray-800 px-4 py-2">
-            {fps()} fps
-          </FloatingContainer>
-        </div>
-      )}
+          )}
+        </FloatingContainer>
+        <FloatingContainer class="px-4 py-3 mb-4">
+          <Slider
+            icon={IconContrast}
+            label="Contrast"
+            max="2"
+            min="0"
+            onInput={({ target }: InputEvent) => {
+              setContrast(Number((target as HTMLInputElement).value));
+            }}
+            step="0.05"
+            value={contrast()}
+          />
+        </FloatingContainer>
+        <FloatingContainer class="px-4 py-3 mb-4">
+          <Slider
+            icon={IconBrightness}
+            label="Brightness"
+            max="2"
+            min="0"
+            onInput={({ target }: InputEvent) => {
+              setBrightness(Number((target as HTMLInputElement).value));
+            }}
+            step="0.05"
+            value={brightness()}
+          />
+        </FloatingContainer>
+        <FloatingContainer class="px-4 py-3 mb-4">
+          <Slider
+            label="Font size"
+            max="18"
+            min="4"
+            onInput={({ target }: InputEvent) => {
+              setPixelDimension(Number((target as HTMLInputElement).value) * 6);
+            }}
+            step=".25"
+            value={pixelDimension() / 6}
+          />
+        </FloatingContainer>
+        <FloatingContainer class="text-gray-800 px-4 py-2">
+          {fps()} fps
+        </FloatingContainer>
+      </div>
     </div>
   );
 };
