@@ -4,6 +4,7 @@ interface Props {
   canvasHeight: number;
   canvasWidth: number;
   left: number;
+  onMove: (delta: { x: number; y: number }) => void;
   pixelDimension: number;
   top: number;
   videoHeight: number;
@@ -11,6 +12,20 @@ interface Props {
 }
 
 const Inset: ParentComponent<Props> = (props) => {
+  function handleMouseMove(event: MouseEvent) {
+    props.onMove({ x: event.movementX, y: event.movementY });
+  }
+
+  function handleMouseDown() {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  }
+
+  function handleMouseUp() {
+    window.removeEventListener("mousemove", handleMouseMove);
+    window.removeEventListener("mouseup", handleMouseUp);
+  }
+
   function getBounds() {
     const visibleVideoPixelWidth = props.canvasWidth / props.pixelDimension;
     const visibleVideoPixelHeight = props.canvasHeight / props.pixelDimension;
@@ -31,7 +46,11 @@ const Inset: ParentComponent<Props> = (props) => {
   }
 
   return (
-    <div class="absolute border border-white rounded-md" style={getBounds()} />
+    <div
+      class="absolute border border-white rounded-md"
+      onMouseDown={handleMouseDown}
+      style={getBounds()}
+    />
   );
 };
 

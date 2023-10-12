@@ -138,6 +138,27 @@ const Mosaic: Component = () => {
     }
   });
 
+  function handleInsetMove(delta: { x: number; y: number }) {
+    const deltaX = (delta.x / video.offsetWidth) * video.videoWidth;
+    const deltaY = (delta.y / video.offsetHeight) * video.videoHeight;
+
+    const visibleVideoPixelWidth = canvas.width / pixelDimension();
+    const visibleVideoPixelHeight = canvas.height / pixelDimension();
+
+    setLeft((prevLeft) =>
+      Math.min(
+        Math.max(prevLeft + deltaX, 0),
+        video.videoWidth - visibleVideoPixelWidth
+      )
+    );
+    setTop((prevTop) =>
+      Math.min(
+        Math.max(prevTop + deltaY, 0),
+        video.videoHeight - visibleVideoPixelHeight
+      )
+    );
+  }
+
   function handleWheel(event: WheelEvent) {
     event.preventDefault();
 
@@ -184,6 +205,7 @@ const Mosaic: Component = () => {
               canvasHeight={canvas.height}
               canvasWidth={canvas.width}
               left={left()}
+              onMove={handleInsetMove}
               top={top()}
               pixelDimension={pixelDimension()}
               videoHeight={video.videoHeight}
